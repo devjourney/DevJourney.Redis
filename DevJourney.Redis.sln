@@ -1,0 +1,17 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevJourney.Redis", "DevJourney.Redis\DevJourney.Redis.csproj", "{F129A120-7C51-4F46-B22E-240E27E5435F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F129A120-7C51-4F46-B22E-240E27E5435F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F129A120-7C51-4F46-B22E-240E27E5435F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F129A120-7C51-4F46-B22E-240E27E5435F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F129A120-7C51-4F46-B22E-240E27E5435F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
