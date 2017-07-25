@@ -34,6 +34,16 @@ namespace DevJourney.Redis
             }
         }
 
+        private string _password = null;
+        public string Password
+        {
+            set
+            {
+                _probeComplete = false;
+                _password = value;
+            }
+        }
+
         private RedisFeatures _features;
         public async Task<RedisFeatures> GetFeaturesAsync()
         {
@@ -83,16 +93,19 @@ namespace DevJourney.Redis
 
             if (dbNumber < 0 || dbNumber > _maxDb)
 				throw new IndexOutOfRangeException(
-                    $"Index must be 0 to {_maxDb} for {_serverName}:{_port}. The value {dbNumber} is out of range.");
+                    $"Index must be 0 to {_maxDb} for {_serverName}:{_port}. " +
+                    $"The value {dbNumber} is out of range.");
 
 			RedisConnector rc = await GetConnectorAsync();
             return rc.Connection.GetDatabase(dbNumber);
         }
 
-        public RedisInstance(string serverName = "localhost", int port = 6379)
+        public RedisInstance(string serverName = "localhost", int port = 6379,
+                            string password = null)
         {
             ServerName = serverName;
             Port = port;
+            Password = password;
         }
 
         private bool _probeComplete = false;
@@ -101,7 +114,9 @@ namespace DevJourney.Redis
         {
             try
             {
-                _connector = new RedisConnector(_serverName, _port, defaultDatabase: 0, allowAdmin: true);
+                _connector = new RedisConnector(_serverName, _port, 
+                                                defaultDatabase: 0, 
+                                                allowAdmin: true);
             }
             catch (Exception ex)
             {
