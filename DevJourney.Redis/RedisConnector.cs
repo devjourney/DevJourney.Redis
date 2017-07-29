@@ -5,13 +5,20 @@ namespace DevJourney.Redis
 {
     public class RedisConnector
     {
-        private Lazy<ConnectionMultiplexer> _lazyPlex = null;
-        private ConfigurationOptions _configurationOptions;
+        readonly Lazy<ConnectionMultiplexer> _lazyPlex;
+        readonly ConfigurationOptions _configurationOptions;
 
         public RedisConnector(ConfigurationOptions config,
                              bool allowAdmin = false)
         {
-            _configurationOptions = config;
+			if (config == null
+				|| config.EndPoints == null
+				|| config.EndPoints.Count == 0)
+			{
+				throw new RedisHelperException(
+					"No endpoints were supplied in the configuration.");
+			}
+			_configurationOptions = config;
             _configurationOptions.AllowAdmin = allowAdmin;
 
             _lazyPlex =

@@ -146,22 +146,26 @@ namespace DevJourney.Redis
 
 		public async Task<object> ScanAsync(IDatabase dbx)
 		{
-			switch (this.Type)
-			{
-				default:
+            switch (this.Type)
+            {
+                default:
 					throw new RedisHelperException(
 						$"Unsupported type '{this.Type}'.");
-				case RedisType.SortedSet:
-					return ScanSortedSet(dbx);
-				case RedisType.Hash:
-					return ScanHash(dbx);
-				case RedisType.List:
-					return await RangeListAsync(dbx);
-				case RedisType.String:
+				case RedisType.None:
+				case RedisType.Unknown:
+                    break;
+                case RedisType.SortedSet:
+                    return ScanSortedSet(dbx);
+                case RedisType.Hash:
+                    return ScanHash(dbx);
+                case RedisType.List:
+                    return await RangeListAsync(dbx);
+                case RedisType.String:
                     return dbx.StringGetAsync(this);
-				case RedisType.Set:
-					return ScanSet(dbx);
-			}
-		}
-	}
+                case RedisType.Set:
+                    return ScanSet(dbx);
+            }
+            return null;
+        }
+    }
 }

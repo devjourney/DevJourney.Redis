@@ -8,9 +8,9 @@ namespace DevJourney.Redis
 {
     public class RedisInstance
     {
-        private ConfigurationOptions _configurationOptions;
+        ConfigurationOptions _configurationOptions;
 
-        private RedisFeatures _features;
+        RedisFeatures _features;
         public async Task<RedisFeatures> GetFeaturesAsync()
         {
             if (!_probeComplete)
@@ -20,7 +20,7 @@ namespace DevJourney.Redis
             return _features;
         }
 
-        private string _version;
+        string _version;
         public async Task<string> GetVersionAsync()
         {
             if (!_probeComplete)
@@ -30,7 +30,7 @@ namespace DevJourney.Redis
             return _version;
         }
 
-        private sbyte _maxDb = 0;
+        sbyte _maxDb;
         public async Task<sbyte> GetMaxDbAsync()
         {
             if (!_probeComplete)
@@ -66,13 +66,13 @@ namespace DevJourney.Redis
                 || _configurationOptions.EndPoints.Count == 0)
             {
                 throw new RedisHelperException(
-                    "No endpoints were supplied in the configuration.");
+                    "No endpoints were supplied in the configuration string.");
             }
         }
 
-        private bool _probeComplete = false;
-        private IServer _server = null;
-        private async Task<bool> Probe()
+        bool _probeComplete;
+        IServer _server;
+        async Task<bool> Probe()
         {
             ConfigurationOptions configDB0 = _configurationOptions.Clone();
             configDB0.DefaultDatabase = 0;
@@ -161,6 +161,8 @@ namespace DevJourney.Redis
                 }
                 catch
                 {
+                    // catch all expected when max DB reached
+                    // no logging or handling required
                     break;
                 }
             } while (maxDb < sbyte.MaxValue);
@@ -176,7 +178,6 @@ namespace DevJourney.Redis
                               bool includeExpiry = false)
         {
             if (maxCount < 1) maxCount = 1;
-            //if (maxCount > 250000) maxCount = 250000;
 
             IDatabase dbx = await GetDatabaseAsync(dbNumber);
 			SortedDictionary<string, RedisKeyInfo> result =
