@@ -8,41 +8,7 @@ namespace DevJourney.Redis
 {
     public class RedisInstance
     {
-        private string _serverName = "localhost";
-        public string ServerName
-        {
-            get { return _serverName; }
-            set
-            {
-                if (value == null || value.Trim().Length == 0)
-                    throw new ArgumentException("The ServerName may not be null or empty.");
-                _probeComplete = false;
-                _serverName = value.Trim();
-            }
-        }
-
-        private int _port = 6379;
-        public int Port
-        {
-            get { return _port; }
-            set
-            {
-                if (value < 0 || value > 65535)
-                    throw new ArgumentException("The Port must be from 0 to 65535.");
-                _probeComplete = false;
-                _port = value;
-            }
-        }
-
-        private string _password = null;
-        public string Password
-        {
-            set
-            {
-                _probeComplete = false;
-                _password = value;
-            }
-        }
+        private ConfigurationOptions _configurationOptions;
 
         private RedisFeatures _features;
         public async Task<RedisFeatures> GetFeaturesAsync()
@@ -74,59 +40,57 @@ namespace DevJourney.Redis
             return _maxDb;
         }
 
-        private RedisConnector _connector = null;
-        public async Task<RedisConnector> GetConnectorAsync()
+        public async Task<IDatabase> GetDatabaseAsync(int dbNumber = 0,
+                                                     bool allowAdmin = false)
         {
             if (!_probeComplete)
             {
                 _probeComplete = await Probe();
             }
-            return _connector;
-        }
-
-        public async Task<IDatabase> GetDatabaseAsync(int dbNumber = 0)
-        {
-			if (!_probeComplete)
-			{
-				_probeComplete = await Probe();
-			}
 
             if (dbNumber < 0 || dbNumber > _maxDb)
-				throw new IndexOutOfRangeException(
-                    $"Index must be 0 to {_maxDb} for {_serverName}:{_port}. " +
+                throw new IndexOutOfRangeException(
+                    $"Index must be 0 to {_maxDb}. " +
                     $"The value {dbNumber} is out of range.");
 
-			RedisConnector rc = await GetConnectorAsync();
+            RedisConnector rc = new RedisConnector(_configurationOptions,
+                                                   allowAdmin);
             return rc.Connection.GetDatabase(dbNumber);
         }
 
-        public RedisInstance(string serverName = "localhost", int port = 6379,
-                            string password = null)
+        public RedisInstance(string configuration)
         {
-            ServerName = serverName;
-            Port = port;
-            Password = password;
+            _configurationOptions = ConfigurationOptions.Parse(configuration);
+            if (_configurationOptions == null
+                || _configurationOptions.EndPoints == null
+                || _configurationOptions.EndPoints.Count == 0)
+            {
+                throw new RedisHelperException(
+                    "No endpoints were supplied in the configuration.");
+            }
         }
 
         private bool _probeComplete = false;
         private IServer _server = null;
         private async Task<bool> Probe()
         {
+            ConfigurationOptions configDB0 = _configurationOptions.Clone();
+            configDB0.DefaultDatabase = 0;
+            RedisConnector connectorDB0 = null;
             try
             {
-                _connector = new RedisConnector(_serverName, _port, 
-                                                defaultDatabase: 0, 
-                                                allowAdmin: true);
+                connectorDB0 = new RedisConnector(configDB0, true);
             }
             catch (Exception ex)
             {
-                throw new RedisHelperException("Cannot create DbConnection.", ex);
+                throw new RedisHelperException(
+                    "Cannot create DbConnection.", ex);
             }
 
             IDatabase db0 = null;
             try
             {
-                db0 = _connector.Connection.GetDatabase(0);
+                db0 = connectorDB0.Connection.GetDatabase(0);
             }
             catch (Exception ex)
             {
@@ -145,23 +109,27 @@ namespace DevJourney.Redis
 
             try
             {
-                _server = _connector.Connection.GetServer(_serverName, _port);
+                _server = connectorDB0.Connection.GetServer(
+                    configDB0.EndPoints[0]);
                 _features = _server.Features;
             }
             catch (Exception ex)
             {
-                throw new RedisHelperException("Cannot get server features.", ex);
+                throw new RedisHelperException(
+                    "Cannot get server features.", ex);
             }
 
             try
             {
                 IGrouping<string, KeyValuePair<string, string>>[] info =
                     await _server.InfoAsync("Server");
-                if (info[0].Key.Equals("Server", StringComparison.CurrentCultureIgnoreCase))
+                if (info[0].Key.Equals("Server",
+                    StringComparison.CurrentCultureIgnoreCase))
                 {
                     foreach (KeyValuePair<string, string> kvp in info[0])
                     {
-                        if (kvp.Key.Equals("redis_version", StringComparison.CurrentCultureIgnoreCase))
+                        if (kvp.Key.Equals("redis_version", 
+                            StringComparison.CurrentCultureIgnoreCase))
                         {
                             _version = kvp.Value;
                             break;
@@ -171,7 +139,8 @@ namespace DevJourney.Redis
             }
             catch (Exception ex)
             {
-                throw new RedisHelperException("Cannot get redis_version.", ex);
+                throw new RedisHelperException(
+                    "Cannot get redis_version.", ex);
             }
 
             sbyte maxDb = 0;
@@ -179,15 +148,19 @@ namespace DevJourney.Redis
             {
                 try
                 {
-                    IDatabase nxtDb = _connector.Connection.GetDatabase(maxDb + 1);
+                    IDatabase nxtDb = connectorDB0
+                        .Connection.GetDatabase(maxDb + 1);
                     RedisResult rr = await nxtDb.ExecuteAsync("PING");
-                    if (rr == null || rr.IsNull || !rr.ToString().Equals("PONG", StringComparison.CurrentCultureIgnoreCase))
+                    if (rr == null || rr.IsNull
+                        || !rr.ToString().Equals(
+                            "PONG", StringComparison.CurrentCultureIgnoreCase))
+                    {
                         break;
+                    }
                     ++maxDb;
                 }
-                catch //(Exception ex)
+                catch
                 {
-                    //Console.WriteLine($"{ex.GetType().Name}: {ex.Message}");
                     break;
                 }
             } while (maxDb < sbyte.MaxValue);
