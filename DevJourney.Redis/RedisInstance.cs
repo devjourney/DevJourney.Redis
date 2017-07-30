@@ -50,8 +50,7 @@ namespace DevJourney.Redis
 
             if (dbNumber < 0 || dbNumber > _maxDb)
                 throw new IndexOutOfRangeException(
-                    $"Index must be 0 to {_maxDb}. " +
-                    $"The value {dbNumber} is out of range.");
+                    $"DB number must be 0 to {_maxDb}.");
 
             RedisConnector rc = new RedisConnector(_configurationOptions,
                                                    allowAdmin);
@@ -79,7 +78,7 @@ namespace DevJourney.Redis
             RedisConnector connectorDB0 = null;
             try
             {
-                connectorDB0 = new RedisConnector(configDB0, true);
+                connectorDB0 = new RedisConnector(configDB0, allowAdmin: true);
             }
             catch (Exception ex)
             {
@@ -149,7 +148,7 @@ namespace DevJourney.Redis
                 try
                 {
                     IDatabase nxtDb = connectorDB0
-                        .Connection.GetDatabase(maxDb + 1);
+                        .Connection.GetDatabase(maxDb);
                     RedisResult rr = await nxtDb.ExecuteAsync("PING");
                     if (rr == null || rr.IsNull
                         || !rr.ToString().Equals(
@@ -161,8 +160,7 @@ namespace DevJourney.Redis
                 }
                 catch
                 {
-                    // catch all expected when max DB reached
-                    // no logging or handling required
+                    // expected... swallow
                     break;
                 }
             } while (maxDb < sbyte.MaxValue);
@@ -177,11 +175,12 @@ namespace DevJourney.Redis
                               bool includeLastAccessed = false,
                               bool includeExpiry = false)
         {
-            if (maxCount < 1) maxCount = 1;
+			SortedDictionary<string, RedisKeyInfo> result =
+				new SortedDictionary<string, RedisKeyInfo>();
+            if (maxCount < 1)
+                return result;
 
             IDatabase dbx = await GetDatabaseAsync(dbNumber);
-			SortedDictionary<string, RedisKeyInfo> result =
-                new SortedDictionary<string, RedisKeyInfo>();
 
             int ndx = 0;
             int exceptionCount = 0;
