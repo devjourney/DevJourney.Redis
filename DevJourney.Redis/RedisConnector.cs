@@ -5,7 +5,7 @@ namespace DevJourney.Redis
 {
     public class RedisConnector
     {
-        readonly Lazy<ConnectionMultiplexer> _lazyPlex;
+        private Lazy<ConnectionMultiplexer> _lazyPlex;
         readonly ConfigurationOptions _configurationOptions;
 
         public RedisConnector(ConfigurationOptions config,
@@ -28,7 +28,22 @@ namespace DevJourney.Redis
                });
         }
 
-        public ConnectionMultiplexer Connection
+		public RedisConnector(string serverName = "localhost",
+            int port = 6379, int defaultDatabase = 0, bool allowAdmin = true)
+		{
+			ConfigurationOptions options = ConfigurationOptions.Parse(
+				$"{serverName}:{port}");
+			options.AllowAdmin = allowAdmin;
+			options.DefaultDatabase = defaultDatabase;
+
+			_lazyPlex =
+			   new Lazy<ConnectionMultiplexer>(() =>
+			   {
+				   return ConnectionMultiplexer.Connect(options);
+			   });
+		}
+
+		public ConnectionMultiplexer Connection
         {
             get
             {
