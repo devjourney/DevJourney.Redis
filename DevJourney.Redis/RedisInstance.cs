@@ -78,7 +78,7 @@ namespace DevJourney.Redis
             RedisConnector connectorDB0 = null;
             try
             {
-                connectorDB0 = new RedisConnector(configDB0, allowAdmin: true);
+                connectorDB0 = new RedisConnector(configDB0, true);
             }
             catch (Exception ex)
             {
@@ -127,7 +127,7 @@ namespace DevJourney.Redis
                 {
                     foreach (KeyValuePair<string, string> kvp in info[0])
                     {
-                        if (kvp.Key.Equals("redis_version", 
+                        if (kvp.Key.Equals("redis_version",
                             StringComparison.CurrentCultureIgnoreCase))
                         {
                             _version = kvp.Value;
@@ -175,8 +175,8 @@ namespace DevJourney.Redis
                               bool includeLastAccessed = false,
                               bool includeExpiry = false)
         {
-			SortedDictionary<string, RedisKeyInfo> result =
-				new SortedDictionary<string, RedisKeyInfo>();
+            SortedDictionary<string, RedisKeyInfo> result =
+                new SortedDictionary<string, RedisKeyInfo>();
             if (maxCount < 1)
                 return result;
 
@@ -208,7 +208,7 @@ namespace DevJourney.Redis
                             lastAccessed = DateTime.UtcNow.AddSeconds(
                                 -idleSeconds);
                     }
-                    result.Add(key.ToString(), new RedisKeyInfo(key, type, 
+                    result.Add(key.ToString(), new RedisKeyInfo(key, type,
                         expiry, lastAccessed));
                     if (++ndx == maxCount)
                         break;
@@ -219,10 +219,10 @@ namespace DevJourney.Redis
                         throw ex;
                     Console.WriteLine($"{ex.GetType().Name} while " +
                         $"loading details for {key}: '{ex.Message}'.");
-				}
-			}
+                }
+            }
 
-			return result;
+            return result;
         }
     }
 }
