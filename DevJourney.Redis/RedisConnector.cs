@@ -5,43 +5,26 @@ namespace DevJourney.Redis
 {
     public class RedisConnector
     {
-        private Lazy<ConnectionMultiplexer> _lazyPlex;
-        readonly ConfigurationOptions _configurationOptions;
+        readonly Lazy<ConnectionMultiplexer> _lazyPlex;
 
-        public RedisConnector(ConfigurationOptions config,
+        public RedisConnector(ConfigurationOptions options,
                              bool allowAdmin = false)
         {
-			if (config == null
-				|| config.EndPoints == null
-				|| config.EndPoints.Count == 0)
+			if (options == null
+				|| options.EndPoints == null
+				|| options.EndPoints.Count == 0)
 			{
 				throw new RedisHelperException(
 					"No endpoints were supplied in the configuration.");
 			}
-			_configurationOptions = config;
-            _configurationOptions.AllowAdmin = allowAdmin;
+            options.AllowAdmin = allowAdmin;
 
             _lazyPlex =
                new Lazy<ConnectionMultiplexer>(() =>
                {
-                  return ConnectionMultiplexer.Connect(_configurationOptions);
+                  return ConnectionMultiplexer.Connect(options);
                });
         }
-
-		public RedisConnector(string serverName = "localhost",
-            int port = 6379, int defaultDatabase = 0, bool allowAdmin = true)
-		{
-			ConfigurationOptions options = ConfigurationOptions.Parse(
-				$"{serverName}:{port}");
-			options.AllowAdmin = allowAdmin;
-			options.DefaultDatabase = defaultDatabase;
-
-			_lazyPlex =
-			   new Lazy<ConnectionMultiplexer>(() =>
-			   {
-				   return ConnectionMultiplexer.Connect(options);
-			   });
-		}
 
 		public ConnectionMultiplexer Connection
         {

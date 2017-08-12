@@ -1,14 +1,13 @@
 ﻿//#define GENDATA
 
 using System;
-using DevJourney.Redis;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 
 namespace DevJourney.Redis.TestHarness
 {
-	class MainClass
+    class MainClass
 	{
 		public static void Main(string[] args)
 		{
@@ -32,12 +31,6 @@ namespace DevJourney.Redis.TestHarness
             }
 
             string configString = $"{server}:{port}";
-            if (password != null && password.Length > 0)
-				configString += $",password={password}";
-
-            RedisConnector conn = new RedisConnector("localhost", 6379, 0);
-            IDatabase db0 = conn.Connection.GetDatabase(0);
-            Console.WriteLine(db0.StringGet("user:1000"));
 
 			RedisInstance dbi = new RedisInstance(configString);
 			Task.Run(async () =>
@@ -51,7 +44,7 @@ namespace DevJourney.Redis.TestHarness
 
 				SortedDictionary<string, RedisKeyInfo> items =
 					await dbi.ScanDatabaseAsync(0, "*",
-						maxCount: 20000,
+						maxCount: 200000,
 						includeLastAccessed: true,
 						includeExpiry: true);
 				foreach (string key in items.Keys)
